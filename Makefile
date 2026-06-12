@@ -5,7 +5,7 @@ SRC = $(wildcard src/*.c)
 OBJ = $(SRC:src/%.c=build/%.o)
 DEP = $(OBJ:.o=.d)
 
-TARGET = pesquisa
+TARGET = ordena
 
 all: $(TARGET)
 

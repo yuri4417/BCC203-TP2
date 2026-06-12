@@ -1,11 +1,8 @@
 #ifndef STRUCT_H
 #define STRUCT_H
-
-
-
 #define MAXTAM 471705
 #define QTDFITAS 20
-
+#define BLOCK_SIZE 10240
 #define ARQCRESC 1
 #define ARQDESC 2
 #define ARQRAND 3
@@ -14,6 +11,14 @@
 #define QS 3
 #define TAMAREA 20
 
+
+#define ARQMETODO "./data/arqMetodo.bin"
+#define ARQRES    "./data/arqResult.txt"
+#define randFULL  "./data/PROVAO.TXT"
+
+
+
+typedef struct timespec Timer;
 typedef struct {
     long int inscricao;
     float nota;
@@ -31,7 +36,8 @@ typedef struct {
 
 typedef struct {
     long comp;
-    long transf;
+    long transfLeit;
+    long transfEsc;
     double tempoExec;
 }Bench;
 

@@ -3,7 +3,7 @@
 #include <sys/types.h>
 #include "struct.h"
 #include "arquivos.h"
-
+#include "Executavel.h"
 int main(int argc, char *argv[]) {
     struct stat st = {0};
     if (stat("./data", &st) == -1)

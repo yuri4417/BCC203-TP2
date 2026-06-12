@@ -1,13 +1,17 @@
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 199309L
 #endif
+
 #include "Executavel.h"
-#include "struct.h"
 #include "IntBalanceada.h"
 #include "IntBalanceadaSub.h"
+#include "QuickSortExterno.h"
+#include "arquivos.h"
 #include <time.h>
-
-typedef struct timespec Timer;
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+//Funcoes relacionadas a utilizacao de timer para calculo de eficiencia do programa
 void timerStart(Timer *t) {
     clock_gettime(CLOCK_MONOTONIC, t);
 }
@@ -18,6 +22,7 @@ double timerStop(Timer *pIni) {
 }
 
 
+//Funcao responsavel pela validacao das variaveis passadas na execucao do ./ordena
 int valida(int argc, char *argv[], Config *cfg){
     //Verifica se o arquivo tem o tamanho certo
     if (argc < 4)
@@ -56,11 +61,14 @@ int valida(int argc, char *argv[], Config *cfg){
     return 1;
 }
 
+
+//Funcao responsavel por inicializar o time, criacao de arquivos e execucao do metodo pedido
 void executar(Config *cfg, Bench *bench) {
     //Declara variaveis que sao usadas nos metodos
     Timer timer;  
     bench->comp = 0;
-    bench->transf= 0;
+    bench->transfLeit = 0;
+    bench->transfEsc = 0;
 
     FILE *pArq =  criaArquivos(cfg->situacao, cfg->imprimir, cfg->quantidade);
     if (!pArq) {
@@ -70,19 +78,28 @@ void executar(Config *cfg, Bench *bench) {
     timerStart(&timer); //Inicia o contador do tempo
     //Chama qual metodo usar
     switch (cfg->metodo) {
+
+        //Intercalacao Balanceada
         case IB2F:
             printf("Faz 2f com algum metodo\n");
             break;
+
+        //Intercalacao Balanceada com Substituicao por Selecao    
         case IB2FSUB:
             printf("Faz 2f com heap\n");
             break;
+
+        //QuickSort Externo    
         case QS:
-            printf("Faz quicksort externo\n");
+            QuicksortExterno(&pArq, &pArq, &pArq, 1, cfg->quantidade);
             break;
     }
+    converteArquivo(cfg->quantidade, cfg->imprimir);
     //Finaliza a contagem do tempo e printa as transf, comp e o tempo de execucao
     bench->tempoExec = timerStop(&timer);
-    printf("Numero de transferencias: %ld\n", bench->transf);
+    /*printf("Numero de transferencias Leitura: %ld\n", bench->transfLeit);
+    printf("Numero de transferencias Escrita: %ld\n", bench->transfEsc);
     printf("Numero de comparacoes: %ld\n", bench->comp);
     printf("Tempo de execucao: %lf segundos\n", bench->tempoExec);
+    */
 }

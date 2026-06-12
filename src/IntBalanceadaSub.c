@@ -1,1 +1,1 @@
-#include "IntBalanceada.h"
+#include "IntBalanceadaSub.h"
