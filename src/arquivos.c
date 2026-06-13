@@ -129,39 +129,55 @@ FILE* criaArquivos(int situacao, int printFlag, int tam) {
 
 
 //Função responsável pela criação das fitas magnéticas
-FILE **criaFitas(){
-    FILE** matrizFile = malloc(2 * sizeof(FILE*)*QTDFITAS);
-    if (!matrizFile) 
-        return NULL;
+Fitas *criaFitas(){
+    Fitas *x = malloc(sizeof(Fitas));
     char filePath[50];
+    struct stat st = {0};
+    if (stat("./data/FEntrada", &st) == -1)
+        mkdir("./data/FEntrada", 0777);
+
+    if (stat("./data/FSaida", &st) == -1)
+        mkdir("./data/FSaida", 0777);
     
-    //Criação das Fitas de Entrada
     for(int i =0; i<QTDFITAS; i++){
         sprintf(filePath, "./data/FEntrada/Fita_%d.txt", i);
-        matrizFile[i] = fopen(filePath, "wb");
-        if(!matrizFile[i])
-        {
+        x->vArq[i] = fopen(filePath, "wb");
+        x->qtdBlocos[i] = 0;
+        if (!(x->vArq[i])) {
             for(int j = 0; j<i; j++)
-                fclose(matrizFile[j]);
-            free(matrizFile);
+                fclose(x->vArq[i]);      
             printf("Erro ao criar os arquivos de fita de entrada na pos: %d.\n", i);
-            return NULL;        
-        }                
+            free(x);
+            return NULL;
+        }
+        
     }
-   
     //Criação das Fitas de Saida
-    for(int i = QTDFITAS; i< 2*QTDFITAS; i++){
+    for(int i = QTDFITAS - 1; i< 2*QTDFITAS; i++){
         sprintf(filePath, "./data/FSaida/Fita_%d.txt", i - QTDFITAS);
-        matrizFile[i] = fopen(filePath, "wb");
-        if(!matrizFile[i]) {
+        x->vArq[i] = fopen(filePath, "wb");
+        x->qtdBlocos[i] = 0;
+        if(!(x->vArq[i])) {
             for(int j = 0; j < i; j++)
-                fclose(matrizFile[j]);
-            free(matrizFile);
+                fclose(x->vArq[j]);
+            free(x->vArq);
             printf("Erro ao criar os arquivos de fita de saída na pos: %d.\n", i);
             return NULL;        
         }      
     }
-    return matrizFile;
+    return x;
+}
+
+void liberaFitas(Fitas *fitas){
+    if(*fitas == NULL)
+        return;
+    for(int i=0; i<2*QTDFITAS; i++){
+        if(fitas->vArq[i] != NULL){
+            fclose(fitas->vArq[i]);
+            fitas->vArq[i]==NULL;
+        }
+        free(fitas);
+    }
 }
 
 

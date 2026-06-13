@@ -81,7 +81,7 @@ void executar(Config *cfg, Bench *bench) {
 
         //Intercalacao Balanceada
         case IB2F:
-            printf("Faz 2f com algum metodo\n");
+            intercalacaoBalanceada(&pArq, cfg->quantidade);
             break;
 
         //Intercalacao Balanceada com Substituicao por Selecao    

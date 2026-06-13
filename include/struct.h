@@ -27,6 +27,11 @@ typedef struct {
     char curso[31];
 } Registro;
 
+typedef struct{
+    FILE* vArq[2 * QTDFITAS];
+    int qtdBlocos[2 * QTDFITAS];
+}Fitas;
+
 typedef struct {
     int metodo;
     int quantidade;
@@ -45,5 +50,10 @@ typedef struct {
     Registro itens[TAMAREA];
     int ocupadas;
 } TipoArea;
+
+typedef struct{
+    Registro reg;
+    int fitaOrigem;
+} Heap;
 
 #endif
