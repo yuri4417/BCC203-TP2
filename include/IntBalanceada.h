@@ -1,8 +1,11 @@
 #ifndef INTBALANCEADA_H
 #define INTBALANCEADA_H
+#include <stdio.h>
 
-void geraBlocos(FILE* arqBin, int tam);
-void intercalarBlocos(FILE* arqBin, int tam);
+#include "struct.h"
+
+void geraBlocos(FILE* arqBin, int tam, Fitas *fitas);
+void intercalarBlocos(FILE** arqBin, int tam, Fitas* fitas);
 void intBalanceada(FILE* arqBin, int tam);
 
 void recarregaBuffer(Registro* buffer, FILE* arqBin, int* qtdRestante, int* bufferN);

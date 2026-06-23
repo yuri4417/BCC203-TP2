@@ -11,6 +11,7 @@
 #define QS 3
 #define TAMAREA 20
 
+#include <stdio.h>
 
 #define ARQMETODO "./data/arqMetodo.bin"
 #define ARQRES    "./data/arqResult.txt"

@@ -81,7 +81,7 @@ void executar(Config *cfg, Bench *bench) {
 
         //Intercalacao Balanceada
         case IB2F:
-            intercalacaoBalanceada(&pArq, cfg->quantidade);
+            intBalanceada(pArq, cfg->quantidade);
             break;
 
         //Intercalacao Balanceada com Substituicao por Selecao    

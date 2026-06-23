@@ -140,7 +140,7 @@ Fitas *criaFitas(){
         mkdir("./data/FSaida", 0777);
     
     for(int i =0; i<QTDFITAS; i++){
-        sprintf(filePath, "./data/FEntrada/Fita_%d.txt", i);
+        sprintf(filePath, "./data/FEntrada/Fita_%d.bin", i);
         x->vArq[i] = fopen(filePath, "wb");
         x->qtdBlocos[i] = 0;
         if (!(x->vArq[i])) {
@@ -154,7 +154,7 @@ Fitas *criaFitas(){
     }
     //Criação das Fitas de Saida
     for(int i = QTDFITAS - 1; i< 2*QTDFITAS; i++){
-        sprintf(filePath, "./data/FSaida/Fita_%d.txt", i - QTDFITAS);
+        sprintf(filePath, "./data/FSaida/Fita_%d.bin", i - QTDFITAS);
         x->vArq[i] = fopen(filePath, "wb");
         x->qtdBlocos[i] = 0;
         if(!(x->vArq[i])) {
@@ -168,13 +168,14 @@ Fitas *criaFitas(){
     return x;
 }
 
+//Função responsável pela desalocação das fitas
 void liberaFitas(Fitas *fitas){
-    if(*fitas == NULL)
+    if(fitas == NULL)
         return;
     for(int i=0; i<2*QTDFITAS; i++){
         if(fitas->vArq[i] != NULL){
             fclose(fitas->vArq[i]);
-            fitas->vArq[i]==NULL;
+            fitas->vArq[i]=NULL;
         }
         free(fitas);
     }
