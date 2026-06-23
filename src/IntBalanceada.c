@@ -223,7 +223,8 @@ void constroiHeap(Heap h[], int n) {
 void refazHeap(Heap h[],int n, int i)
 {
 	int menor = i;
-	int esq = 2*i + 1;
+	int esq = 2*i + 1;//poo
+
 	int dir = 2*i + 2;
 
 	if(esq < n && h[esq].reg.nota < h[menor].reg.nota)
