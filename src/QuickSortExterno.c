@@ -183,7 +183,8 @@ void QuicksortExterno(FILE **ArqLi, FILE **ArqEi, FILE **ArqLEs, int Esq, int Di
     TipoArea Area; // Area de armazenamento interna
     
     //printf("Esq=%d Dir=%d\n", Esq, Dir);
-    if (Dir - Esq < 1) return;
+    if (Dir - Esq < 1) 
+        return;
     
     FAVazia(&Area);
     Particao(ArqLi, ArqEi, ArqLEs, &Area, Esq, Dir, &i, &j);

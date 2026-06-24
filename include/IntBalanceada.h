@@ -5,7 +5,7 @@
 #include "struct.h"
 
 void geraBlocos(FILE* arqBin, int tam, Fitas *fitas);
-void intercalarBlocos(FILE** arqBin, int tam, Fitas* fitas);
+void intercalarBlocos(FILE* arqBin, Fitas* fitas);
 void intBalanceada(FILE* arqBin, int tam);
 
 void recarregaBuffer(Registro* buffer, FILE* arqBin, int* qtdRestante, int* bufferN);

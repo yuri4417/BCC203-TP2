@@ -1,7 +1,21 @@
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 #include "IntBalanceada.h"
 #include "struct.h"
 #include "arquivos.h"
+
+
+#ifdef _WIN32
+    #include <io.h>
+    #define truncate(arq) _chsize(_fileno(arq), 0)
+#else
+    #include <unistd.h>
+    #define truncate(arq) ftruncate(fileno(arq), 0)
+#endif
+
+
+
 
 void mergerec(Registro *v, int l, int r) {
 	if (l < r) {
@@ -51,7 +65,6 @@ void mergeSort(Registro *v, int n) {
 }
 
 
-
 void geraBlocos(FILE* arqBin, int tam, Fitas *fitas) {
     Registro buffer[BLOCK_SIZE];
     Registro vec[TAMAREA];
@@ -61,8 +74,7 @@ void geraBlocos(FILE* arqBin, int tam, Fitas *fitas) {
     int idxBuffer = 0;
     int fitaAtual = 0;
     int idxVec;
-
-    
+	
     bufferN = (qtdRestante > BLOCK_SIZE) ? BLOCK_SIZE : qtdRestante;
     fread(buffer, sizeof(Registro), bufferN, arqBin); 
     qtdRestante -= bufferN;
@@ -87,133 +99,122 @@ void geraBlocos(FILE* arqBin, int tam, Fitas *fitas) {
     }
 }
 
-
-/*
-**1. Configuração Inicial**
-
-* Defina quais são as fitas de entrada (ex: índices `0` a `QTDFITAS-1`) e as fitas de saída (ex: índices `QTDFITAS` a `2*QTDFITAS - 1`).
-* Crie uma variável para rastrear a **fita de saída atual** (iniciando no primeiro índice do grupo de saída).
-* Crie um array (ex: `fitaAtiva[QTDFITAS]`) inicializado com `1` (verdadeiro) para controlar se cada fita de entrada ainda possui dados ou se chegou ao Fim de Arquivo (EOF).
-
-**2. Loop Principal (Executa enquanto houver dados nas fitas de entrada)**
-
-* Zere o array que conta os registros lidos por fita no bloco atual (o seu `idxFitas`).
-* Zere o tamanho do Heap.
-* **Repovoamento do Heap:** Para cada fita de entrada que ainda está ativa (`fitaAtiva[i] == 1`), tente ler **um** registro.
-* Se a leitura for bem-sucedida: coloque o registro no Heap, guarde a origem dele (`fitaOrigem`), incremente o contador de registros lidos dessa fita (`idxFitas[i] = 1`) e aumente o tamanho do Heap.
-* Se a leitura falhar (EOF): marque `fitaAtiva[i] = 0`.
-
-
-* Após verificar todas as fitas, chame a função para construir o Min-Heap (`constroiHeap`).
-* **Condição de Parada:** Se o tamanho do Heap for `0` após essa etapa, significa que todas as fitas de entrada acabaram. Interrompa o Loop Principal (saia do loop).
-
-**3. Loop de Intercalação do Bloco (Executa enquanto o tamanho do Heap > 0)**
-
-* Pegue a raiz do Heap (o menor elemento) e descubra de qual fita ele veio (`fitaOrigem`).
-* Grave este registro na **fita de saída atual**.
-* **Verificação de limite do bloco:** Verifique se a fita de origem ainda não esgotou o seu bloco (ou seja, se `idxFitas[fitaOrigem] < TAMAREA`).
-* **Se o bloco não acabou:** Tente ler o próximo registro da `fitaOrigem`.
-* Se ler com sucesso: Substitua a raiz do Heap por esse novo registro, incremente `idxFitas[fitaOrigem]` e chame `refazHeap`.
-* Se falhar (EOF no meio do bloco): Marque `fitaAtiva[fitaOrigem] = 0`, mova o último elemento do Heap para a raiz, diminua o tamanho do Heap em 1 e chame `refazHeap`.
-
-
-* **Se o bloco acabou:** Não faça leitura. Apenas mova o último elemento do Heap para a raiz, diminua o tamanho do Heap em 1 e chame `refazHeap`.
-
-
-
-**4. Transição de Bloco (Após o Heap esvaziar)**
-
-* O loop interno (passo 3) terminou, o que significa que um bloco gigante foi totalmente formado e gravado na fita de saída atual.
-* Avance a **fita de saída atual** para a próxima. Use aritmética modular para que o índice volte ao início do grupo de saída caso ultrapasse o limite (ex: `fitaSaida = QTDFITAS + ((fitaSaida - QTDFITAS + 1) % QTDFITAS)`).
-* O Loop Principal recomeça do Passo 2 para processar os próximos blocos das fitas de entrada.
-*/
-
-
 int verificaFitasAtivas(int *vec, int n) {
-	for (int i = 0; i < n; i++)
-		if (vec[i])QTDFITAS
-			return 1;
-
-	return 0;
+    for (int i = 0; i < n; i++)
+        if (vec[i] > 0)
+            return 1;
+    return 0;
 }
 
-void intercalarBlocos(FILE** arqBin, int tam, Fitas* fitas) {
-	int idxSaidaAtual = QTDFITAS;
-	int idxFitas[2 * QTDFITAS] = {0};
-	int fitaAtiva[QTDFITAS];
-	Heap h[QTDFITAS];
-	Registro reg;
-	int tamHeap;
-	for (int i = 0; i < QTDFITAS; i++)
-		fitaAtiva[i] = 1;
-	while (verificaFitasAtivas(fitaAtiva, QTDFITAS)) {
-		for (int i = 0; i < 2 * QTDFITAS; i++)
-			idxFitas[i] = 0;
-		tamHeap = 0;
-		for (int i = 0; i < QTDFITAS; i++)	
-			if(fread(&reg, sizeof(Registro), 1, arqBin) == 1) {
-				h[tamHeap++] = reg;
-				constroiHeap(h, tamHeap);
-				idxFitas[i]++;	
-			}
-			else
-				fitaAtiva[i] = 0;
-	
-	}
-	
-}
+void intercalarBlocos(FILE* arqBin, Fitas* fitas) {
+    int idxFitas[QTDFITAS] = {0}; // Controla quantos registros foram lidos do bloco atual de cada fita
+    bool parteSaida = true; // true -> fitas de saida = 20-39 / false -> fitas de saida = 0-19
+    Heap h[QTDFITAS];
+    Registro reg;
+    int baseE = 0;
+    int baseS = QTDFITAS;
+    int tamHeap;
+    long int tamBloco = TAMAREA; 
 
-/*
-void intercalarBlocos(FILE** arqBin, int tam, Fitas* fitas){
-	Heap h[QTDFITAS];
-    int blocoValido[2 * QTDFITAS] = {1};
-    int idxFitas[2 * QTDFITAS] = {0};
+    while (1) {
+        baseE = parteSaida ? 0 : QTDFITAS;
+        baseS = parteSaida ? QTDFITAS : 0;
+        int totalBlocos = 0;
 
-	int tamHeap = 0;
-	Registro reg;
-    int BlocoAtual = 0;
-    int qtdBlocosMax = fitas->qtdBlocos[0];
-    int i = 0;
-
-	for (int i =0;i < QTDFITAS;i++){
-		rewind(fitas->vArq[i]);
-		if(fread(&reg, sizeof(Registro), 1, fitas->vArq[i]) == 1){
-            idxFitas[i]++;
-			h[tamHeap].reg = reg;
-			h[tamHeap].fitaOrigem = i;
-			tamHeap++;
-		}
-	}
-	constroiHeap(h, tamHeap);
-
-    for (int i = 1; i < QTDFITAS; i++)
-        if (fitas->qtdBlocos[i] > qtdBlocosMax)
-            qtdBlocosMax = fitas->qtdBlocos[i];
-
-    for (int i = 0; i < qtdBlocosMax; i++) {
-		FILE *arqSaida = fitas->vArq[QTDFITAS + i];
-        while(tamHeap > 0) {
-            Heap menor = h[0];
-            // Fazer buffer para escrever na fita de saida
-            fwrite(&menor.reg, sizeof(Registro), 1, arqSaida);
-
-            // Atualizar a qtd de blocos direitinho, consertar uso de idxFitas para funcionar com os proximos blocos
-            if(blocoValido[menor.fitaOrigem] && (fread(&reg, sizeof(Registro), 1, fitas->vArq[menor.fitaOrigem]) == 1)) {
-                idxFitas[menor.fitaOrigem]++;
-                h[0].reg = reg;
-                h[0].fitaOrigem = menor.fitaOrigem;
-            } else {
-                if (idxFitas[menor.fitaOrigem] == TAMAREA)
-                    fitas->qtdBlocos[menor.fitaOrigem]--;
-                h[0] = h[tamHeap - 1];
-                tamHeap--;
-            }
-            refazHeap(h, tamHeap, 0);
+        // Reposiciona os ponteiros e conta blocos ativos
+        for (int i = 0; i < QTDFITAS; i++) {
+            totalBlocos += fitas->qtdBlocos[baseE + i];
+            rewind(fitas->vArq[baseE + i]);
+            rewind(fitas->vArq[baseS + i]);
+            fitas->qtdBlocos[baseS + i] = 0;
         }
+            
+        // Condição de parada, ocorre quando apenas 1 bloco ordenado no total
+        if (totalBlocos <= 1) 
+            break;
 
-	}
+        int idxSaidaAtual = baseS; 
+
+        while (verificaFitasAtivas(&fitas->qtdBlocos[baseE], QTDFITAS)) {
+            tamHeap = 0;    
+            
+            for (int i = 0; i < QTDFITAS; i++) 
+                idxFitas[i] = 0;
+            for (int i = 0; i < QTDFITAS; i++){    
+                if (fitas->qtdBlocos[baseE + i] > 0) {
+                    if(fread(&reg, sizeof(Registro), 1, fitas->vArq[baseE + i]) == 1) {
+                        h[tamHeap].reg = reg;
+                        h[tamHeap++].fitaOrigem = i;
+                        idxFitas[i]++;    
+                    }
+                }
+            }
+            
+            constroiHeap(h, tamHeap);
+
+            // Processa o Heap até esvaziar o bloco atual
+            while (tamHeap > 0) {
+                // Grava o menor elemento na fita de saída atual
+                fwrite(&(h[0].reg), sizeof(Registro), 1, fitas->vArq[idxSaidaAtual]);   
+                int origem = h[0].fitaOrigem;
+                if (idxFitas[origem] < tamBloco) {
+                    Registro temp;
+                    if (fread(&temp, sizeof(Registro), 1, fitas->vArq[baseE + origem]) == 1) {
+                        idxFitas[origem]++;
+                        h[0].reg = temp;
+                        h[0].fitaOrigem = origem;
+                    }
+                    else {
+                        h[0] = h[--tamHeap]; // Fim físico da fita
+                    }
+                }
+                else {
+                    h[0] = h[--tamHeap]; // Fim lógico do bloco
+                }
+                
+                refazHeap(h, tamHeap, 0);
+            }
+            
+            fitas->qtdBlocos[idxSaidaAtual]++; // Registra que um bloco inteiro foi gerado na saída
+
+            for(int i = 0; i < QTDFITAS; i++) {
+                if (idxFitas[i] > 0 && fitas->qtdBlocos[baseE + i] > 0) 
+                    fitas->qtdBlocos[baseE + i]--;
+            }
+            
+            idxSaidaAtual = baseS + ((idxSaidaAtual - baseS + 1) % QTDFITAS);
+        }    
+        
+        for(int i = 0; i < QTDFITAS; i++) 
+            fflush(fitas->vArq[baseS + i]);
+        
+        parteSaida = !parteSaida;
+        for (int i = 0; i < QTDFITAS; i++) {
+            rewind(fitas->vArq[baseE + i]);
+			truncate(fitas->vArq[baseE + i]);
+        }
+        tamBloco *= QTDFITAS; 
+    }
+
+    int fitaFinal = -1;
+    for (int i = 0; i < 2 * QTDFITAS; i++) {
+        if (fitas->qtdBlocos[i] > 0) {
+            fitaFinal = i;
+            break;
+        }
+    }
+    
+    if (fitaFinal != -1) {
+        rewind(fitas->vArq[fitaFinal]);
+        rewind(arqBin);
+        while (fread(&reg, sizeof(Registro), 1, fitas->vArq[fitaFinal]) == 1)
+            fwrite(&reg, sizeof(Registro), 1, arqBin);
+            
+        fflush(arqBin);
+    }
+
 }
-*/
+
 
 void constroiHeap(Heap h[], int n) {
 	for (int i = n / 2 - 1; i >= 0; i--)
@@ -223,7 +224,7 @@ void constroiHeap(Heap h[], int n) {
 void refazHeap(Heap h[],int n, int i)
 {
 	int menor = i;
-	int esq = 2*i + 1;//poo
+	int esq = 2*i + 1;
 
 	int dir = 2*i + 2;
 
@@ -249,6 +250,6 @@ void trocaHeap(Heap *a, Heap *b) {
 void intBalanceada(FILE* arqBin, int tam) {
 	Fitas *fitas = criaFitas();
 	geraBlocos(arqBin, tam, fitas);
-	intercalarBlocos(&arqBin, tam,fitas);
+	intercalarBlocos(arqBin, fitas);
 	liberaFitas(fitas);
 }

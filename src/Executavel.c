@@ -94,6 +94,8 @@ void executar(Config *cfg, Bench *bench) {
             QuicksortExterno(&pArq, &pArq, &pArq, 1, cfg->quantidade);
             break;
     }
+    fflush(pArq); 
+    fclose(pArq);
     converteArquivo(cfg->quantidade, cfg->imprimir);
     //Finaliza a contagem do tempo e printa as transf, comp e o tempo de execucao
     bench->tempoExec = timerStop(&timer);

@@ -10,7 +10,7 @@
 #define IB2FSUB 2
 #define QS 3
 #define TAMAREA 20
-
+#define MAX_BLOCOS 50000
 #include <stdio.h>
 
 #define ARQMETODO "./data/arqMetodo.bin"
