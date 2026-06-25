@@ -17,51 +17,39 @@
 
 
 
-void mergerec(Registro *v, int l, int r) {
-	if (l < r) {
-		int m = (l + r) / 2;
-		mergerec(v, l, m);
-		mergerec(v, m + 1, r);
-		merge(v, l, m, r);
-	}
+
+void merge(Registro *v, Registro *aux, int l, int m, int r) {
+    for (int k = l; k <= r; k++)
+        aux[k] = v[k];
+
+    int i = l;
+    int j = m + 1;
+
+    for (int k = l; k <= r; k++) {
+        if (i > m) 
+            v[k] = aux[j++];
+        else if (j > r) 
+            v[k] = aux[i++];
+        else if (aux[i].nota <= aux[j].nota) 
+            v[k] = aux[i++];
+        else 
+            v[k] = aux[j++];
+    }
 }
 
-
-void merge(Registro *v, int l, int m, int r) {
-	int sizeL = m - l + 1;
-	int sizeR = r - m;
-	
-	Registro *vl = (Registro*) malloc(sizeof(Registro) * sizeL);
-	Registro *vr = (Registro*) malloc(sizeof(Registro) * sizeR);
-
-	int i, j, k;
-	for (i = 0; i < sizeL; i++)
-		vl[i] = v[i + l];
-	for (j = 0; j < sizeR; j++)
-		vr[j] = v[j + m + 1];
-		
-	i = j = 0;
-	k = l;
-	
-	while (i < sizeL && j < sizeR) {
-		if (vl[i].nota <= vr[j].nota)
-			v[k++] = vl[i++];
-		else
-			v[k++] = vr[j++];
-	}
-	
-	while (i < sizeL)
-		v[k++] = vl[i++];
-		
-	while (j < sizeR)
-		v[k++] = vr[j++];
-		
-	free(vl);
-	free(vr);
+void mergerec(Registro *v, Registro *aux, int l, int r) {
+    if (l < r) {
+        int m = (l + r) / 2;
+        mergerec(v, aux, l, m);
+        mergerec(v, aux, m + 1, r);
+        merge(v, aux, l, m, r);
+    }
 }
 
 void mergeSort(Registro *v, int n) {
-	mergerec(v, 0, n - 1);
+    Registro *aux = (Registro*) malloc(sizeof(Registro) * n);
+    mergerec(v, aux, 0, n - 1);
+    free(aux);
 }
 
 
@@ -129,7 +117,7 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas) {
             fitas->qtdBlocos[baseS + i] = 0;
         }
             
-        // Condição de parada, ocorre quando apenas 1 bloco ordenado no total
+        // Condição de parada, ocorre quando ha apenas 1 bloco ordenado
         if (totalBlocos <= 1) 
             break;
 
@@ -164,18 +152,16 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas) {
                         h[0].reg = temp;
                         h[0].fitaOrigem = origem;
                     }
-                    else {
-                        h[0] = h[--tamHeap]; // Fim físico da fita
-                    }
+                    else 
+                        h[0] = h[--tamHeap]; // EOF
+                    
                 }
-                else {
-                    h[0] = h[--tamHeap]; // Fim lógico do bloco
-                }
-                
+                else 
+                    h[0] = h[--tamHeap]; // bloco chegou ao fim logicamente
                 refazHeap(h, tamHeap, 0);
             }
             
-            fitas->qtdBlocos[idxSaidaAtual]++; // Registra que um bloco inteiro foi gerado na saída
+            fitas->qtdBlocos[idxSaidaAtual]++; // Registra que um bloco foi gerado na saída
 
             for(int i = 0; i < QTDFITAS; i++) {
                 if (idxFitas[i] > 0 && fitas->qtdBlocos[baseE + i] > 0) 
@@ -185,14 +171,12 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas) {
             idxSaidaAtual = baseS + ((idxSaidaAtual - baseS + 1) % QTDFITAS);
         }    
         
-        for(int i = 0; i < QTDFITAS; i++) 
-            fflush(fitas->vArq[baseS + i]);
-        
-        parteSaida = !parteSaida;
         for (int i = 0; i < QTDFITAS; i++) {
+            fflush(fitas->vArq[baseS + i]); 
             rewind(fitas->vArq[baseE + i]);
-			truncate(fitas->vArq[baseE + i]);
-        }
+            truncate(fitas->vArq[baseE + i]);
+        }    
+        parteSaida = !parteSaida;
         tamBloco *= QTDFITAS; 
     }
 
@@ -207,9 +191,12 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas) {
     if (fitaFinal != -1) {
         rewind(fitas->vArq[fitaFinal]);
         rewind(arqBin);
-        while (fread(&reg, sizeof(Registro), 1, fitas->vArq[fitaFinal]) == 1)
-            fwrite(&reg, sizeof(Registro), 1, arqBin);
-            
+        
+        Registro buffer[BLOCK_SIZE];
+        size_t lidos;
+        while ((lidos = fread(buffer, sizeof(Registro), BLOCK_SIZE, fitas->vArq[fitaFinal])) > 0) 
+            fwrite(buffer, sizeof(Registro), lidos, arqBin);
+    
         fflush(arqBin);
     }
 
@@ -221,8 +208,7 @@ void constroiHeap(Heap h[], int n) {
 		refazHeap(h, n, i);
 }
 
-void refazHeap(Heap h[],int n, int i)
-{
+void refazHeap(Heap h[],int n, int i) {
 	int menor = i;
 	int esq = 2*i + 1;
 
