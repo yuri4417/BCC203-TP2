@@ -1,7 +1,7 @@
 #!/bin/bash
 METODO=${1:-1}
 
-NUMMEDIA=1
+NUMMEDIA=5
 TAMANHOS=(100 1000 10000 100000 471705)
 SITUACOES=(1 2 3) # 1-Ascendente, 2-Descendente, 3-Aleatório
 

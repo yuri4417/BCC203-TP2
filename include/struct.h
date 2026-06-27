@@ -2,14 +2,14 @@
 #define STRUCT_H
 #define MAXTAM 471705
 #define QTDFITAS 20 
-#define BLOCK_SIZE 10240
+#define BLOCK_SIZE 4096
 #define ARQCRESC 1
 #define ARQDESC 2 
 #define ARQRAND 3 
 #define IB2F 1
 #define IB2FSUB 2 
 #define QS 3      
-#define TAMAREA 20
+#define TAMAREA 5
 #define MAX_BLOCOS 50000 
 #include <stdbool.h>
 #include <stdio.h>
@@ -71,6 +71,11 @@ typedef struct{
     bool marcado;
 } Heap;
 
-
+// Buffer especifico para Leitura e Escrita do QuickSort
+typedef struct {
+    Registro regs[BLOCK_SIZE];
+    int idx;      
+    int n;   
+} BufferQS;
 
 #endif

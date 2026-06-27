@@ -2,13 +2,12 @@
 #include <stdlib.h>
 #include "../include/struct.h" 
 
+
 int main(int argc, char *argv[]) {
     if (argc < 3) {
         printf("Uso: ./verifica <situacao> <quantidade>\n");
         return 1;
     }
-
-    int situacao = atoi(argv[1]);
     int qtd = atoi(argv[2]);
 
     FILE *f = fopen(ARQMETODO, "rb");
@@ -24,9 +23,10 @@ int main(int argc, char *argv[]) {
     if (fread(&anterior, sizeof(Registro), 1, f) == 1) {
         lidos++;
         while (fread(&atual, sizeof(Registro), 1, f) == 1) {
-            if (situacao == ARQCRESC && atual.nota < anterior.nota) falhasOrdem++;
-            if (situacao == ARQDESC && atual.nota > anterior.nota) falhasOrdem++;
-            
+            if (atual.nota < anterior.nota) { 
+                printf("Fora de ordem -> Anterior: %f - Atual: %f\n", anterior.nota, atual.nota);
+                falhasOrdem++;
+            }
             anterior = atual;
             lidos++;
         }

@@ -70,7 +70,7 @@ int cmpDecresc(const void *a,const void *b) {
     return 0;
 }
 
-//Funcao que cria o arquivo respectivo ao metodo de ordenacao pedido pelo usuario
+//Funcao que cria o arquivo respectivo ao metodo pedido pelo usuario
 void geraArqMetodo(FILE **pArq, char *filePath, int ord, int printFlag, int tam) {
     FILE *pArqRef;
     
@@ -78,6 +78,7 @@ void geraArqMetodo(FILE **pArq, char *filePath, int ord, int printFlag, int tam)
     if (!(*pArq)) 
         return;
 
+    //Buffer para a leitura dos registros
     Registro *vec = malloc(sizeof(Registro) * tam);
     if (!vec) {
         fclose(*pArq);
@@ -124,6 +125,7 @@ void geraArqMetodo(FILE **pArq, char *filePath, int ord, int printFlag, int tam)
         pArqRef = newFile;
     }
 
+    //Cria o arqMetodo
     int i = 0;
     while (i < tam && fread(&vec[i], sizeof(Registro), 1, pArqRef) == 1) 
         i++;
@@ -198,7 +200,7 @@ Fitas *criaFitas(){
         if(!(x->vArq[i])) {
             for(int j = 0; j < i; j++)
                 fclose(x->vArq[j]);
-            free(x->vArq);
+            free(x);
             printf("Erro ao criar os arquivos de fita de saída na pos: %d.\n", i);
             return NULL;        
         }      
@@ -229,11 +231,16 @@ void converteArquivo(int tam, int printFlag) {
         return;
     
     FILE *pDest = fopen(ARQRES, "w");
-    if (!pDest)
+    if (!pDest){
+        fclose(pArqRef);
         return;
+    }
     Registro *vec = malloc(sizeof(Registro) * tam);
-    if (!vec)
+    if (!vec){
+        fclose(pArqRef);
+        fclose(pDest);
         return;
+    }
     fread(vec, sizeof(Registro), tam, pArqRef);
     if (printFlag) 
         printf("Arquivo após o método:\n");
@@ -247,4 +254,6 @@ void converteArquivo(int tam, int printFlag) {
     }
     
     free(vec);
+    fclose(pArqRef);
+    fclose(pDest);
 }

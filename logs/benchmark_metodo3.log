@@ -1,42 +1,12 @@
 ==========================================================
-BENCHMARK - MÉTODO 3 (1 execucoes)
+BENCHMARK - MÉTODO 3 (5 execucoes)
 ==========================================================
 
 >>> SITUAÇÃO: Crescente <<<
   -> Testando tamanho: 100 registros
-Execucao concluida: Tempo: 0.0032s | Leituras: 315 | Escritas: 315 | Comparacoes: 520
+Execucao concluida: Tempo: 0.0005s | Leituras: 49 | Escritas: 25 | Comparacoes: 2472
   -> Testando tamanho: 1000 registros
-Execucao concluida: Tempo: 0.2671s | Leituras: 26818 | Escritas: 26818 | Comparacoes: 52572
+Execucao concluida: Tempo: 0.0177s | Leituras: 499 | Escritas: 250 | Comparacoes: 249747
   -> Testando tamanho: 10000 registros
-Execucao concluida: Tempo: 24.6026s | Leituras: 2636581 | Escritas: 2636581 | Comparacoes: 5262630
+Execucao concluida: Tempo: 1.3576s | Leituras: 6925 | Escritas: 4428 | Comparacoes: 24997497
   -> Testando tamanho: 100000 registros
-Execucao concluida: Tempo: 0.0000s | Leituras: 0 | Escritas: 0 | Comparacoes: 0
-  -> Testando tamanho: 471705 registros
-Execucao concluida: Tempo: 0.0000s | Leituras: 0 | Escritas: 0 | Comparacoes: 0
-----------------------------------------------------------
-
->>> SITUAÇÃO: Decrescente <<<
-  -> Testando tamanho: 100 registros
-Execucao concluida: Tempo: 0.0012s | Leituras: 100 | Escritas: 100 | Comparacoes: 893
-  -> Testando tamanho: 1000 registros
-Execucao concluida: Tempo: 0.0115s | Leituras: 1000 | Escritas: 1000 | Comparacoes: 9162
-  -> Testando tamanho: 10000 registros
-Execucao concluida: Tempo: 0.1095s | Leituras: 10000 | Escritas: 10000 | Comparacoes: 79982
-  -> Testando tamanho: 100000 registros
-Execucao concluida: Tempo: 1.0600s | Leituras: 100000 | Escritas: 100000 | Comparacoes: 760001
-  -> Testando tamanho: 471705 registros
-Execucao concluida: Tempo: 0.0000s | Leituras: 0 | Escritas: 0 | Comparacoes: 0
-----------------------------------------------------------
-
->>> SITUAÇÃO: Aleatório <<<
-  -> Testando tamanho: 100 registros
-Execucao concluida: Tempo: 0.0018s | Leituras: 199 | Escritas: 199 | Comparacoes: 1363
-  -> Testando tamanho: 1000 registros
-Execucao concluida: Tempo: 0.0478s | Leituras: 4642 | Escritas: 4642 | Comparacoes: 18547
-  -> Testando tamanho: 10000 registros
-Execucao concluida: Tempo: 1.3735s | Leituras: 136841 | Escritas: 136841 | Comparacoes: 321743
-  -> Testando tamanho: 100000 registros
-Execucao concluida: Tempo: 37.1400s | Leituras: 3818259 | Escritas: 3818259 | Comparacoes: 7687222
-  -> Testando tamanho: 471705 registros
-Execucao concluida: Tempo: 0.0000s | Leituras: 0 | Escritas: 0 | Comparacoes: 0
-----------------------------------------------------------

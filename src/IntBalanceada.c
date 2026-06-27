@@ -104,7 +104,7 @@ void geraBlocos(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
     int qtdRestante = tam;
     int idxBuffer = 0;
     int fitaAtual = 0;
-    int idxVec;
+    int idxVec; //ultima posicao valida do buffer
 	
     bufferN = (qtdRestante > BLOCK_SIZE) ? BLOCK_SIZE : qtdRestante;
     fread(buffer, sizeof(Registro), bufferN, arqBin); 
@@ -128,14 +128,16 @@ void geraBlocos(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
         
         mergeSort(vec, idxVec, bench);
         
+        //Escreve o bloco na fita
         fwrite(vec, sizeof(Registro), idxVec, fitas->vArq[fitaAtual]);
         bench->transfEsc += idxVec;
 
+        //Escreve -1 para sinalizar o fim do bloco
         fwrite(&(EOB), sizeof(Registro), 1, fitas->vArq[fitaAtual]);
         bench->transfEsc++;
 
         fitas->qtdBlocos[fitaAtual]++;
-        fitaAtual = (fitaAtual + 1) % QTDFITAS;
+        fitaAtual = (fitaAtual + 1) % QTDFITAS; //vai para proxima fita
     }
 }
 
@@ -151,6 +153,7 @@ void geraBlocosSub(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
     bench->transfLeit += bufferN;
     qtdRestante -= bufferN;
     
+    //Preenche o heap
     int tamHeap = 0;
     while (tamHeap < TAMAREA && bufferN > 0) {
         vec[tamHeap].reg = buffer[idxBuffer++];
@@ -169,6 +172,7 @@ void geraBlocosSub(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
     constroiHeap(vec, tamHeap, bench);
 
     while (tamHeap > 0) {
+        //Tira o primeiro (menor) do heap
         Registro ultimoGravado = vec[0].reg;
         fwrite(&ultimoGravado, sizeof(Registro), 1, fitas->vArq[fitaAtual]);
         bench->transfEsc++;
@@ -184,19 +188,21 @@ void geraBlocosSub(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
                 qtdRestante -= bufferN;
                 idxBuffer = 0;
             }    
-            
+            //entra o proximo elemento da fita que saiu
             vec[0].reg = prox;
             if (prox.nota < ultimoGravado.nota)
                 vec[0].marcado = true;
             else 
                 vec[0].marcado = false;
         } else {
+            //Caso acabar o arquivo, remove a raiz e diminui heap
             vec[0] = vec[--tamHeap];
         }
         
         if (tamHeap > 0) {
             refazHeap(vec, tamHeap, 0, bench);
             
+            //Verifica se todos estao marcados
             bool todosMarcados = true;
             for (int i = 0; i < tamHeap; i++) {
                 if (!vec[i].marcado) {
@@ -205,6 +211,7 @@ void geraBlocosSub(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
                 }
             }
             
+            //Se todos estiverem marcados, escreve o EOB e vai para a proxima fita
             if (todosMarcados) {
 
                 fwrite(&(EOB), sizeof(Registro), 1, fitas->vArq[fitaAtual]);
@@ -220,7 +227,7 @@ void geraBlocosSub(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
             }
         }
     }
-    
+    //Escreve o EOB na ultima fita
     fwrite(&(EOB), sizeof(Registro), 1, fitas->vArq[fitaAtual]);
     bench->transfEsc++;
     fitas->qtdBlocos[fitaAtual]++;
@@ -236,10 +243,12 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
     int tamHeap;
     
     while (1) {
+        //Base das fitas de Entrada e Saida alternando entre as INTERCALACOES
         baseE = parteSaida ? 0 : QTDFITAS;
         baseS = parteSaida ? QTDFITAS : 0;
         int totalBlocos = 0;
 
+        //Obtem o num total de blocos e da rewind para voltar cada fita pro inicio
         for (int i = 0; i < QTDFITAS; i++) {
             totalBlocos += fitas->qtdBlocos[baseE + i];
             rewind(fitas->vArq[baseE + i]);
@@ -247,11 +256,13 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
             fitas->qtdBlocos[baseS + i] = 0;
         }
         
+        //Se tiver so um bloco ele ja eh o arquivo ordenado
         if (totalBlocos <= 1) 
             break;
             
         int idxSaidaAtual = baseS; 
         
+        //Enquanto tiver fitas com blocos ele faz o heap
         while (verificaFitasAtivas(&fitas->qtdBlocos[baseE], QTDFITAS)) {
             tamHeap = 0;    
             
@@ -264,6 +275,7 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
                             h[tamHeap].fitaOrigem = i;
                             h[tamHeap++].marcado = false; 
                         } else {
+                            //Fim do bloco
                             fitas->qtdBlocos[baseE + i]--; 
                         }
                     }
@@ -271,6 +283,7 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
             }
             constroiHeap(h, tamHeap, bench);
             
+            //Escreve o menor na fita e coloca o prox da fita de origem no heap
             while (tamHeap > 0) { 
                 fwrite(&(h[0].reg), sizeof(Registro), 1, fitas->vArq[idxSaidaAtual]);   
                 bench->transfEsc++;
@@ -281,6 +294,7 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
                 if (fread(&temp, sizeof(Registro), 1, fitas->vArq[baseE + origem]) == 1) {
                     bench->transfLeit++;
                     
+                    //Caso fim do bloco
                     if (temp.nota == -1.0) {
                         fitas->qtdBlocos[baseE + origem]--; 
                         h[0] = h[--tamHeap];
@@ -298,19 +312,23 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
             }
 
 
+            //Escreve o EOB no fim do bloco
             fwrite(&(EOB), sizeof(Registro), 1, fitas->vArq[idxSaidaAtual]);
             bench->transfEsc++;
             
+            //Vai pra prox fita
             fitas->qtdBlocos[idxSaidaAtual]++; 
             idxSaidaAtual = baseS + ((idxSaidaAtual - baseS + 1) % QTDFITAS);
         }
-            
+        //Todos os blocos intercalados, troca entrada pela saida    
         for (int i = 0; i < QTDFITAS; i++) {
             fflush(fitas->vArq[baseS + i]); 
             rewind(fitas->vArq[baseE + i]);
         }    
         parteSaida = !parteSaida;
     }
+
+    //Descobre qual fita ficou o resultado
     int fitaFinal = -1;
     for (int i = 0; i < 2 * QTDFITAS; i++) {
         if (fitas->qtdBlocos[i] > 0) {
@@ -319,6 +337,7 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
         }
     }
     
+    //Volta ao inicio da fita e le ela toda
     if (fitaFinal != -1) {
         rewind(fitas->vArq[fitaFinal]);
         rewind(arqBin);
@@ -331,6 +350,7 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
             int validos = 0;
             
             for (size_t k = 0; k < lidos; k++) {
+                //Copia apenas os registros validos, pois em uma fita final vai ter varios EOB
                 if (buffer[k].nota != -1.0) {
                     bufferLimpo[validos++] = buffer[k];
                 }

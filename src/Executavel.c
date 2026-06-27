@@ -31,7 +31,7 @@ int valida(int argc, char *argv[], Config *cfg){
     //Valida qual metodo usar
     cfg->metodo = atoi(argv[1]);
     if(cfg->metodo < 1 || cfg->metodo > 3){ 
-        printf("Metodo invalido. Use 1 para Intercalação Balanceada com Counting Sort, 2 para Intercalação Balanceada com Seleção do Substuição, 3 para QuickSort Externo.\n");
+        printf("Metodo invalido. Use 1 para Intercalação Balanceada com Ordenação interna, 2 para Intercalação Balanceada com Seleção do Substuição, 3 para QuickSort Externo.\n");
         return 0;
     }
     

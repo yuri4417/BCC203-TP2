@@ -12,9 +12,8 @@ void geraArqMetodo(FILE **pArq, char *filePath, int ord, int printFlag, int tam)
 int cmpDecresc(const void *a,const void *b);
 int cmpCresc(const void *a, const void *b);
 
-//Funcoes de leitura de arquivos
-int parseRegBin(FILE *arq, Registro *r) ;
-int parseReg(FILE* pArq, Registro *item) ;
+//Funcao para ler um registro de um arquivo texto
+int parseReg(FILE* pArq, Registro *item);
 
 Fitas *criaFitas(); //Funcao responsavel por alocar a estrutura das Fitas
 void liberaFitas(Fitas *fitas); // Funcao responsavel pela desalocacao das fitas
