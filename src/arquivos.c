@@ -48,11 +48,6 @@ int parseReg(FILE* pArq, Registro *item) {
     return 1;
 }
 
-//Funcao de leitura do registro binario
-int parseRegBin(FILE *arq, Registro *r) {
-    return fread(r, sizeof(Registro), 1, arq) == 1;
-}
-
 //Funcoes comparativas entre itens
 int cmpCresc(const void *a, const void *b) {
     const Registro *r1 = a;
@@ -76,59 +71,101 @@ int cmpDecresc(const void *a,const void *b) {
 }
 
 //Funcao que cria o arquivo respectivo ao metodo de ordenacao pedido pelo usuario
-void geraArqMetodo(FILE **pArq, int ord, int printFlag, int tam) {
+void geraArqMetodo(FILE **pArq, char *filePath, int ord, int printFlag, int tam) {
+    FILE *pArqRef;
+    
     *pArq = fopen(ARQMETODO, "w+b");
     if (!(*pArq)) 
         return;
 
-    FILE *pArqRef = fopen(randFULL, "r");
-    if (!pArqRef) {
-        fclose(*pArq);
-        return;
-    }
-
     Registro *vec = malloc(sizeof(Registro) * tam);
     if (!vec) {
         fclose(*pArq);
-        fclose(pArqRef);
         return;
     }
-    int i = 0;
-    while (i < tam && parseReg(pArqRef, &vec[i]))
-        i++;
+    pArqRef = fopen(filePath, "rb"); 
+    if (!pArqRef) {
+        FILE *pArqTxt = fopen(randTXT, "r");
+        if (!pArqTxt) {
+            free(vec);
+            fclose(*pArq);
+            return;
+        }
+        FILE *newFile = fopen(filePath, "w+b");
+        if (!newFile) {
+            fclose(pArqTxt);
+            free(vec);
+            fclose(*pArq);
+            return;
+        }
+        Registro *buffer = malloc(sizeof(Registro) * MAXTAM);
+        if (!buffer) {
+            fclose(newFile);
+            fclose(pArqTxt);
+            free(vec);
+            fclose(*pArq);
+            return;
+        }
 
+        int i = 0;
+        while (i < MAXTAM && parseReg(pArqTxt, &buffer[i]))
+            i++;
+            
+        if (ord == ARQCRESC)
+            qsort(buffer, i, sizeof(Registro), cmpCresc);
+        else if (ord == ARQDESC)
+            qsort(buffer, i, sizeof(Registro), cmpDecresc);
+            
+        fwrite(buffer, sizeof(Registro), i, newFile);
+        
+        free(buffer);
+        fclose(pArqTxt);
+        rewind(newFile); 
+        pArqRef = newFile;
+    }
+
+    int i = 0;
+    while (i < tam && fread(&vec[i], sizeof(Registro), 1, pArqRef) == 1) 
+        i++;
     if (ord == ARQCRESC)
         qsort(vec, i, sizeof(Registro), cmpCresc);
     else if (ord == ARQDESC)
         qsort(vec, i, sizeof(Registro), cmpDecresc);
-
+        
     fwrite(vec, sizeof(Registro), i, *pArq);
-
+    
     if (printFlag) {
         printf("Registros presentes no arquivo-base para o método:\n");
-        for (int j = 0; j < i; j++) {
+        for (int j = 0; j < i; j++) 
             printf("Matricula: %08ld | Nota: %6.2f | Curso: %-30s | Cidade: %-50s | Estado: %-2s\n", vec[j].inscricao,
-                 vec[j].nota, vec[j].curso, vec[j].cidade, vec[j].estado);
-        }
+                vec[j].nota, vec[j].curso, vec[j].cidade, vec[j].estado);
     }
-
+    
     free(vec);
     fclose(pArqRef);
-
     fflush(*pArq);
-    fseek(*pArq, 0, SEEK_SET);
+    rewind(*pArq); 
 }
-
 
 //Função responsável por criar um arquivo
 FILE* criaArquivos(int situacao, int printFlag, int tam) {
     FILE *pArq = NULL;
-    geraArqMetodo(&pArq, situacao, printFlag, tam);
+    switch (situacao) {
+        case ARQCRESC:
+            geraArqMetodo(&pArq, crescFULL, 1, printFlag, tam);
+            break;
+        case ARQDESC:
+            geraArqMetodo(&pArq, descFULL, 2, printFlag, tam);
+            break;
+        case ARQRAND:
+            geraArqMetodo(&pArq, randFULL, 3, printFlag, tam);
+            break;
+    }
     return pArq;
 }
 
 
-//Função responsável pela criação das fitas magnéticas
+//Função responsável pela criação das fitas
 Fitas *criaFitas(){
     Fitas *x = malloc(sizeof(Fitas));
     char filePath[50];
@@ -145,7 +182,8 @@ Fitas *criaFitas(){
         x->qtdBlocos[i] = 0;
         if (!(x->vArq[i])) {
             for(int j = 0; j<i; j++)
-                fclose(x->vArq[i]);      
+                if (x->vArq[i] != NULL) 
+                    fclose(x->vArq[i]);
             printf("Erro ao criar os arquivos de fita de entrada na pos: %d.\n", i);
             free(x);
             return NULL;

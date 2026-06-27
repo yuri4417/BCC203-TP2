@@ -4,13 +4,13 @@
 
 #include "Executavel.h"
 #include "IntBalanceada.h"
-#include "IntBalanceadaSub.h"
 #include "QuickSortExterno.h"
 #include "arquivos.h"
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
 //Funcoes relacionadas a utilizacao de timer para calculo de eficiencia do programa
 void timerStart(Timer *t) {
     clock_gettime(CLOCK_MONOTONIC, t);
@@ -81,27 +81,27 @@ void executar(Config *cfg, Bench *bench) {
 
         //Intercalacao Balanceada
         case IB2F:
-            intBalanceada(pArq, cfg->quantidade);
+            intBalanceada(pArq, cfg->quantidade,bench);
             break;
 
         //Intercalacao Balanceada com Substituicao por Selecao    
         case IB2FSUB:
-            printf("Faz 2f com heap\n");
+            intBalanceadaSub(pArq, cfg->quantidade,bench);
             break;
 
         //QuickSort Externo    
         case QS:
-            QuicksortExterno(&pArq, &pArq, &pArq, 1, cfg->quantidade);
+            QuicksortExterno(&pArq, &pArq, &pArq, 1, cfg->quantidade,bench);
             break;
     }
+    bench->tempoExec = timerStop(&timer);
+    //Fecha o arquivo e converte para txt
     fflush(pArq); 
     fclose(pArq);
     converteArquivo(cfg->quantidade, cfg->imprimir);
-    //Finaliza a contagem do tempo e printa as transf, comp e o tempo de execucao
-    bench->tempoExec = timerStop(&timer);
-    /*printf("Numero de transferencias Leitura: %ld\n", bench->transfLeit);
+    //printa as transf, comp e o tempo de execucao
+    printf("Numero de transferencias Leitura: %ld\n", bench->transfLeit);
     printf("Numero de transferencias Escrita: %ld\n", bench->transfEsc);
     printf("Numero de comparacoes: %ld\n", bench->comp);
     printf("Tempo de execucao: %lf segundos\n", bench->tempoExec);
-    */
 }

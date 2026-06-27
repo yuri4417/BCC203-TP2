@@ -5,20 +5,58 @@
 #include "struct.h"
 #include "arquivos.h"
 
+//Funcao Responsavel por Refazer o Heap, consertando a ordem de prioridade
+void refazHeap(Heap h[], int n, int i, Bench *bench) {
+    int menor = i;
+    int esq = 2 * i + 1;
+    int dir = 2 * i + 2;
 
-#ifdef _WIN32
-    #include <io.h>
-    #define truncate(arq) _chsize(_fileno(arq), 0)
-#else
-    #include <unistd.h>
-    #define truncate(arq) ftruncate(fileno(arq), 0)
-#endif
+    if (esq < n) {
+        bench->comp++;
+        if (h[esq].marcado == h[menor].marcado) {
+            if (h[esq].reg.nota < h[menor].reg.nota) 
+                menor = esq;
+        }
+            
+        else if (h[esq].marcado == false && h[menor].marcado == true) 
+            menor = esq;
+    }
 
+    if (dir < n) {
+        bench->comp++;
+        if (h[dir].marcado == h[menor].marcado) {
+            if (h[dir].reg.nota < h[menor].reg.nota) 
+                menor = dir;
+        }
+            
+        else if (h[dir].marcado == false && h[menor].marcado == true) 
+            menor = dir;
+    }
 
+    if (menor != i) {
+        Heap temp = h[i];
+        h[i] = h[menor];
+        h[menor] = temp;
+        refazHeap(h, n, menor, bench);
+    }
+}
 
+//Funcao responsavel por Construir o Heap
+void constroiHeap(Heap h[], int n, Bench *bench) {
+    for (int i = n / 2 - 1; i >= 0; i--)
+        refazHeap(h, n, i, bench);
+}
 
+//Verifica se ha fitas ativas
+int verificaFitasAtivas(int *vec, int n) {
+    for (int i = 0; i < n; i++)
+        if (vec[i] > 0)
+            return 1;
+    return 0;
+}
 
-void merge(Registro *v, Registro *aux, int l, int m, int r) {
+//Funcao comparativa do Merge Sort
+void merge(Registro *v, Registro *aux, int l, int m, int r, Bench *bench) {
     for (int k = l; k <= r; k++)
         aux[k] = v[k];
 
@@ -30,30 +68,35 @@ void merge(Registro *v, Registro *aux, int l, int m, int r) {
             v[k] = aux[j++];
         else if (j > r) 
             v[k] = aux[i++];
-        else if (aux[i].nota <= aux[j].nota) 
-            v[k] = aux[i++];
-        else 
-            v[k] = aux[j++];
+        else {
+            bench->comp++;
+            if (aux[i].nota <= aux[j].nota) 
+                v[k] = aux[i++];
+            else 
+                v[k] = aux[j++];
+        }    
     }
 }
 
-void mergerec(Registro *v, Registro *aux, int l, int r) {
+//Funcao recursiva do merge sort
+void mergerec(Registro *v, Registro *aux, int l, int r, Bench *bench) {
     if (l < r) {
         int m = (l + r) / 2;
-        mergerec(v, aux, l, m);
-        mergerec(v, aux, m + 1, r);
-        merge(v, aux, l, m, r);
+        mergerec(v, aux, l, m, bench);
+        mergerec(v, aux, m + 1, r, bench);
+        merge(v, aux, l, m, r, bench);
     }
 }
 
-void mergeSort(Registro *v, int n) {
+//Funcao principal do merge sort
+void mergeSort(Registro *v, int n, Bench *bench) {
     Registro *aux = (Registro*) malloc(sizeof(Registro) * n);
-    mergerec(v, aux, 0, n - 1);
+    mergerec(v, aux, 0, n - 1, bench);
     free(aux);
 }
 
-
-void geraBlocos(FILE* arqBin, int tam, Fitas *fitas) {
+//Funcao fundamental da geracao de blocos de acordo com o arquivo base com Merge Sort
+void geraBlocos(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
     Registro buffer[BLOCK_SIZE];
     Registro vec[TAMAREA];
 
@@ -65,9 +108,10 @@ void geraBlocos(FILE* arqBin, int tam, Fitas *fitas) {
 	
     bufferN = (qtdRestante > BLOCK_SIZE) ? BLOCK_SIZE : qtdRestante;
     fread(buffer, sizeof(Registro), bufferN, arqBin); 
+    bench->transfLeit += bufferN;
     qtdRestante -= bufferN;
 
-    while(bufferN > 0) {
+    while (bufferN > 0) {
         idxVec = 0;
         while (idxVec < TAMAREA && bufferN > 0) {
             vec[idxVec++] = buffer[idxBuffer++];
@@ -76,110 +120,197 @@ void geraBlocos(FILE* arqBin, int tam, Fitas *fitas) {
             if (bufferN == 0 && qtdRestante > 0) {
                 bufferN = (qtdRestante > BLOCK_SIZE) ? BLOCK_SIZE : qtdRestante;
                 fread(buffer, sizeof(Registro), bufferN, arqBin); 
+                bench->transfLeit += bufferN;
                 qtdRestante -= bufferN;
                 idxBuffer = 0;
             }
         } 
-        mergeSort(vec, idxVec);
+        
+        mergeSort(vec, idxVec, bench);
+        
         fwrite(vec, sizeof(Registro), idxVec, fitas->vArq[fitaAtual]);
+        bench->transfEsc += idxVec;
+
+        fwrite(&(EOB), sizeof(Registro), 1, fitas->vArq[fitaAtual]);
+        bench->transfEsc++;
+
         fitas->qtdBlocos[fitaAtual]++;
         fitaAtual = (fitaAtual + 1) % QTDFITAS;
     }
 }
 
-int verificaFitasAtivas(int *vec, int n) {
-    for (int i = 0; i < n; i++)
-        if (vec[i] > 0)
-            return 1;
-    return 0;
+//Funcao fundamental da geracao de blocos de acordo com o arquivo base com Selecao por Substituicao
+void geraBlocosSub(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
+    Registro buffer[BLOCK_SIZE];
+    Heap vec[TAMAREA];
+
+    int bufferN, qtdRestante = tam, idxBuffer = 0, fitaAtual = 0;
+
+    bufferN = (qtdRestante > BLOCK_SIZE) ? BLOCK_SIZE : qtdRestante;
+    fread(buffer, sizeof(Registro), bufferN, arqBin); 
+    bench->transfLeit += bufferN;
+    qtdRestante -= bufferN;
+    
+    int tamHeap = 0;
+    while (tamHeap < TAMAREA && bufferN > 0) {
+        vec[tamHeap].reg = buffer[idxBuffer++];
+        vec[tamHeap].marcado = false;
+        tamHeap++;
+        bufferN--;
+        
+        if (bufferN == 0 && qtdRestante > 0) {
+            bufferN = (qtdRestante > BLOCK_SIZE) ? BLOCK_SIZE : qtdRestante;
+            fread(buffer, sizeof(Registro), bufferN, arqBin); 
+            bench->transfLeit += bufferN;
+            qtdRestante -= bufferN;
+            idxBuffer = 0;
+        }
+    }
+    constroiHeap(vec, tamHeap, bench);
+
+    while (tamHeap > 0) {
+        Registro ultimoGravado = vec[0].reg;
+        fwrite(&ultimoGravado, sizeof(Registro), 1, fitas->vArq[fitaAtual]);
+        bench->transfEsc++;
+        
+        if (bufferN > 0) {
+            Registro prox = buffer[idxBuffer++];
+            bufferN--;
+            
+            if (bufferN == 0 && qtdRestante > 0) {
+                bufferN = (qtdRestante > BLOCK_SIZE) ? BLOCK_SIZE : qtdRestante;
+                fread(buffer, sizeof(Registro), bufferN, arqBin); 
+                bench->transfLeit += bufferN;
+                qtdRestante -= bufferN;
+                idxBuffer = 0;
+            }    
+            
+            vec[0].reg = prox;
+            if (prox.nota < ultimoGravado.nota)
+                vec[0].marcado = true;
+            else 
+                vec[0].marcado = false;
+        } else {
+            vec[0] = vec[--tamHeap];
+        }
+        
+        if (tamHeap > 0) {
+            refazHeap(vec, tamHeap, 0, bench);
+            
+            bool todosMarcados = true;
+            for (int i = 0; i < tamHeap; i++) {
+                if (!vec[i].marcado) {
+                    todosMarcados = false;
+                    break;
+                }
+            }
+            
+            if (todosMarcados) {
+
+                fwrite(&(EOB), sizeof(Registro), 1, fitas->vArq[fitaAtual]);
+                bench->transfEsc++;
+
+                fitas->qtdBlocos[fitaAtual]++;
+                fitaAtual = (fitaAtual + 1) % QTDFITAS;
+                
+                for (int i = 0; i < tamHeap; i++)
+                    vec[i].marcado = false;
+                
+                constroiHeap(vec, tamHeap, bench);
+            }
+        }
+    }
+    
+    fwrite(&(EOB), sizeof(Registro), 1, fitas->vArq[fitaAtual]);
+    bench->transfEsc++;
+    fitas->qtdBlocos[fitaAtual]++;
 }
 
-void intercalarBlocos(FILE* arqBin, Fitas* fitas) {
-    int idxFitas[QTDFITAS] = {0}; // Controla quantos registros foram lidos do bloco atual de cada fita
-    bool parteSaida = true; // true -> fitas de saida = 20-39 / false -> fitas de saida = 0-19
+//Funcao principal de Intercalacao dos blocos gerados
+void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
+    bool parteSaida = true; 
     Heap h[QTDFITAS];
     Registro reg;
     int baseE = 0;
     int baseS = QTDFITAS;
     int tamHeap;
-    long int tamBloco = TAMAREA; 
-
+    
     while (1) {
         baseE = parteSaida ? 0 : QTDFITAS;
         baseS = parteSaida ? QTDFITAS : 0;
         int totalBlocos = 0;
 
-        // Reposiciona os ponteiros e conta blocos ativos
         for (int i = 0; i < QTDFITAS; i++) {
             totalBlocos += fitas->qtdBlocos[baseE + i];
             rewind(fitas->vArq[baseE + i]);
             rewind(fitas->vArq[baseS + i]);
             fitas->qtdBlocos[baseS + i] = 0;
         }
-            
-        // Condição de parada, ocorre quando ha apenas 1 bloco ordenado
+        
         if (totalBlocos <= 1) 
             break;
-
+            
         int idxSaidaAtual = baseS; 
-
+        
         while (verificaFitasAtivas(&fitas->qtdBlocos[baseE], QTDFITAS)) {
             tamHeap = 0;    
             
-            for (int i = 0; i < QTDFITAS; i++) 
-                idxFitas[i] = 0;
-            for (int i = 0; i < QTDFITAS; i++){    
+            for (int i = 0; i < QTDFITAS; i++) {
                 if (fitas->qtdBlocos[baseE + i] > 0) {
-                    if(fread(&reg, sizeof(Registro), 1, fitas->vArq[baseE + i]) == 1) {
-                        h[tamHeap].reg = reg;
-                        h[tamHeap++].fitaOrigem = i;
-                        idxFitas[i]++;    
+                    if (fread(&reg, sizeof(Registro), 1, fitas->vArq[baseE + i]) == 1) {
+                        bench->transfLeit++;
+                        if (reg.nota != -1.0) {
+                            h[tamHeap].reg = reg;
+                            h[tamHeap].fitaOrigem = i;
+                            h[tamHeap++].marcado = false; 
+                        } else {
+                            fitas->qtdBlocos[baseE + i]--; 
+                        }
                     }
                 }
             }
+            constroiHeap(h, tamHeap, bench);
             
-            constroiHeap(h, tamHeap);
-
-            // Processa o Heap até esvaziar o bloco atual
-            while (tamHeap > 0) {
-                // Grava o menor elemento na fita de saída atual
+            while (tamHeap > 0) { 
                 fwrite(&(h[0].reg), sizeof(Registro), 1, fitas->vArq[idxSaidaAtual]);   
+                bench->transfEsc++;
+
                 int origem = h[0].fitaOrigem;
-                if (idxFitas[origem] < tamBloco) {
-                    Registro temp;
-                    if (fread(&temp, sizeof(Registro), 1, fitas->vArq[baseE + origem]) == 1) {
-                        idxFitas[origem]++;
+                Registro temp;
+                
+                if (fread(&temp, sizeof(Registro), 1, fitas->vArq[baseE + origem]) == 1) {
+                    bench->transfLeit++;
+                    
+                    if (temp.nota == -1.0) {
+                        fitas->qtdBlocos[baseE + origem]--; 
+                        h[0] = h[--tamHeap];
+                    } else {
                         h[0].reg = temp;
                         h[0].fitaOrigem = origem;
+                        h[0].marcado = false;
                     }
-                    else 
-                        h[0] = h[--tamHeap]; // EOF
-                    
+                } else {
+                    h[0] = h[--tamHeap]; 
                 }
-                else 
-                    h[0] = h[--tamHeap]; // bloco chegou ao fim logicamente
-                refazHeap(h, tamHeap, 0);
+                    
+                if (tamHeap > 0)
+                    refazHeap(h, tamHeap, 0, bench);
             }
-            
-            fitas->qtdBlocos[idxSaidaAtual]++; // Registra que um bloco foi gerado na saída
 
-            for(int i = 0; i < QTDFITAS; i++) {
-                if (idxFitas[i] > 0 && fitas->qtdBlocos[baseE + i] > 0) 
-                    fitas->qtdBlocos[baseE + i]--;
-            }
+
+            fwrite(&(EOB), sizeof(Registro), 1, fitas->vArq[idxSaidaAtual]);
+            bench->transfEsc++;
             
+            fitas->qtdBlocos[idxSaidaAtual]++; 
             idxSaidaAtual = baseS + ((idxSaidaAtual - baseS + 1) % QTDFITAS);
-        }    
-        
+        }
+            
         for (int i = 0; i < QTDFITAS; i++) {
             fflush(fitas->vArq[baseS + i]); 
             rewind(fitas->vArq[baseE + i]);
-            truncate(fitas->vArq[baseE + i]);
         }    
         parteSaida = !parteSaida;
-        tamBloco *= QTDFITAS; 
     }
-
     int fitaFinal = -1;
     for (int i = 0; i < 2 * QTDFITAS; i++) {
         if (fitas->qtdBlocos[i] > 0) {
@@ -191,51 +322,41 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas) {
     if (fitaFinal != -1) {
         rewind(fitas->vArq[fitaFinal]);
         rewind(arqBin);
-        
         Registro buffer[BLOCK_SIZE];
+        Registro bufferLimpo[BLOCK_SIZE];
         size_t lidos;
-        while ((lidos = fread(buffer, sizeof(Registro), BLOCK_SIZE, fitas->vArq[fitaFinal])) > 0) 
-            fwrite(buffer, sizeof(Registro), lidos, arqBin);
-    
+        
+        while ((lidos = fread(buffer, sizeof(Registro), BLOCK_SIZE, fitas->vArq[fitaFinal])) > 0) {
+            bench->transfLeit += lidos;
+            int validos = 0;
+            
+            for (size_t k = 0; k < lidos; k++) {
+                if (buffer[k].nota != -1.0) {
+                    bufferLimpo[validos++] = buffer[k];
+                }
+            }
+            
+            if (validos > 0) {
+                fwrite(bufferLimpo, sizeof(Registro), validos, arqBin);
+                bench->transfEsc += validos;
+            }
+        }
         fflush(arqBin);
     }
-
 }
 
-
-void constroiHeap(Heap h[], int n) {
-	for (int i = n / 2 - 1; i >= 0; i--)
-		refazHeap(h, n, i);
+//Funcao principal da Intercalacao Balanceada com Merge Sort
+void intBalanceada(FILE* arqBin, int tam, Bench *bench) {
+    Fitas *fitas = criaFitas();
+    geraBlocos(arqBin, tam, fitas, bench);
+    intercalarBlocos(arqBin, fitas, bench);
+    liberaFitas(fitas);
 }
 
-void refazHeap(Heap h[],int n, int i) {
-	int menor = i;
-	int esq = 2*i + 1;
-
-	int dir = 2*i + 2;
-
-	if(esq < n && h[esq].reg.nota < h[menor].reg.nota)
-		menor = esq;
-
-	if (dir < n && h[dir].reg.nota < h[menor].reg.nota)
-		menor = dir;
-
-	if (menor != i){
-		trocaHeap(&h[i], &h[menor]);
-		refazHeap(h, n, menor);
-	}
-
-}
-
-void trocaHeap(Heap *a, Heap *b) {
-	Heap temp = *a;
-	*a = *b;
-	*b = temp;
-}
-
-void intBalanceada(FILE* arqBin, int tam) {
-	Fitas *fitas = criaFitas();
-	geraBlocos(arqBin, tam, fitas);
-	intercalarBlocos(arqBin, fitas);
-	liberaFitas(fitas);
+//Funcao principal da Intercalacao Balanceada com Selecao por Substituicao
+void intBalanceadaSub(FILE* arqBin, int tam, Bench *bench) {
+    Fitas *fitas = criaFitas();
+    geraBlocosSub(arqBin, tam, fitas, bench);
+    intercalarBlocos(arqBin, fitas, bench);
+    liberaFitas(fitas);
 }
