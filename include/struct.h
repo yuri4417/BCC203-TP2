@@ -1,7 +1,7 @@
 #ifndef STRUCT_H
 #define STRUCT_H
 #define MAXTAM 471705
-#define QTDFITAS 20 
+#define QTDFITAS 20
 #define BLOCK_SIZE 4096
 #define ARQCRESC 1
 #define ARQDESC 2 
@@ -9,8 +9,7 @@
 #define IB2F 1
 #define IB2FSUB 2 
 #define QS 3      
-#define TAMAREA 5
-#define MAX_BLOCOS 50000 
+#define TAMAREA 20
 #include <stdbool.h>
 #include <stdio.h>
 

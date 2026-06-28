@@ -24,7 +24,6 @@ void InsereItem(Registro R, TipoArea *Area,Bench *bench) {
     int i = Area->ocupadas - 1;
 
     // Desloca os elementos maiores para a direita para abrir espaço
-    // Altere 'nota' para o campo correto se o critério de ordenação for outro
     while (i >= 0){
         bench->comp++;
         if (Area->itens[i].nota > R.nota) {
@@ -187,6 +186,7 @@ void Particao(FILE **ArqLi, FILE **ArqEi, FILE **ArqLEs, TipoArea *Area, int Esq
 
     while (Ls >= Li) {
         if (NRArea < TAMAREA - 1) {
+            //Insere alternado na area
             if (OndeLer)
                 LeSup(ArqLEs, &bufLs, &UltLido, &Ls, &OndeLer, bench);
             else 
@@ -205,6 +205,7 @@ void Particao(FILE **ArqLi, FILE **ArqEi, FILE **ArqLEs, TipoArea *Area, int Esq
         else 
             Lelnf(ArqLi, &bufLi, &UltLido, &Li, &OndeLer, bench);
 
+        //Ultimo so eh inserido na area caso esteja entre Lsup e Linf 
         bench->comp++;
         if (UltLido.nota > Lsup) {
             *j = Es;
@@ -220,6 +221,7 @@ void Particao(FILE **ArqLi, FILE **ArqEi, FILE **ArqLEs, TipoArea *Area, int Esq
 
         InserirArea(Area, &UltLido, &NRArea, bench);
 
+        //Area cheia, decide qual sair
         if (Ei - Esq < Dir - Es) { 
             RetiraMin(Area, &R, &NRArea);
             EscreveMin(ArqEi, &bufEi, R, &Ei, bench); 
@@ -254,7 +256,6 @@ int cmpRegs(const void *a, const void *b) {
 
 
 //Funcao principal de QuickSort Externo
-// Função principal de QuickSort Externo (Blindada contra Stack Overflow)
 void QuicksortExterno(FILE **ArqLi, FILE **ArqEi, FILE **ArqLEs, int Esq, int Dir, Bench *bench) { 
     int i, j;
     TipoArea Area; 

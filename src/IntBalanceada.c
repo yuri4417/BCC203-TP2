@@ -108,7 +108,7 @@ void geraBlocos(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
 	
     bufferN = (qtdRestante > BLOCK_SIZE) ? BLOCK_SIZE : qtdRestante;
     fread(buffer, sizeof(Registro), bufferN, arqBin); 
-    bench->transfLeit += bufferN;
+    bench->transfLeit++;
     qtdRestante -= bufferN;
 
     while (bufferN > 0) {
@@ -120,7 +120,7 @@ void geraBlocos(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
             if (bufferN == 0 && qtdRestante > 0) {
                 bufferN = (qtdRestante > BLOCK_SIZE) ? BLOCK_SIZE : qtdRestante;
                 fread(buffer, sizeof(Registro), bufferN, arqBin); 
-                bench->transfLeit += bufferN;
+                bench->transfLeit++;
                 qtdRestante -= bufferN;
                 idxBuffer = 0;
             }
@@ -130,7 +130,7 @@ void geraBlocos(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
         
         //Escreve o bloco na fita
         fwrite(vec, sizeof(Registro), idxVec, fitas->vArq[fitaAtual]);
-        bench->transfEsc += idxVec;
+        bench->transfEsc++;
 
         //Escreve -1 para sinalizar o fim do bloco
         fwrite(&(EOB), sizeof(Registro), 1, fitas->vArq[fitaAtual]);
@@ -150,7 +150,7 @@ void geraBlocosSub(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
 
     bufferN = (qtdRestante > BLOCK_SIZE) ? BLOCK_SIZE : qtdRestante;
     fread(buffer, sizeof(Registro), bufferN, arqBin); 
-    bench->transfLeit += bufferN;
+    bench->transfLeit++;
     qtdRestante -= bufferN;
     
     //Preenche o heap
@@ -164,7 +164,7 @@ void geraBlocosSub(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
         if (bufferN == 0 && qtdRestante > 0) {
             bufferN = (qtdRestante > BLOCK_SIZE) ? BLOCK_SIZE : qtdRestante;
             fread(buffer, sizeof(Registro), bufferN, arqBin); 
-            bench->transfLeit += bufferN;
+            bench->transfLeit++;
             qtdRestante -= bufferN;
             idxBuffer = 0;
         }
@@ -173,31 +173,31 @@ void geraBlocosSub(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
 
     while (tamHeap > 0) {
         //Tira o primeiro (menor) do heap
-        Registro ultimoGravado = vec[0].reg;
-        fwrite(&ultimoGravado, sizeof(Registro), 1, fitas->vArq[fitaAtual]);
+        Registro temp = vec[0].reg;
+        fwrite(&temp, sizeof(Registro), 1, fitas->vArq[fitaAtual]);
         bench->transfEsc++;
         
         if (bufferN > 0) {
-            Registro prox = buffer[idxBuffer++];
+            vec[0].reg = buffer[idxBuffer++];
             bufferN--;
             
-            if (bufferN == 0 && qtdRestante > 0) {
+            if (bufferN == 0 && qtdRestante > 0) { // Recarrega o buffer se necessario
                 bufferN = (qtdRestante > BLOCK_SIZE) ? BLOCK_SIZE : qtdRestante;
                 fread(buffer, sizeof(Registro), bufferN, arqBin); 
-                bench->transfLeit += bufferN;
+                bench->transfLeit++;
                 qtdRestante -= bufferN;
                 idxBuffer = 0;
             }    
             //entra o proximo elemento da fita que saiu
-            vec[0].reg = prox;
-            if (prox.nota < ultimoGravado.nota)
+            if (vec[0].reg.nota < temp.nota)
                 vec[0].marcado = true;
             else 
                 vec[0].marcado = false;
-        } else {
-            //Caso acabar o arquivo, remove a raiz e diminui heap
+        } 
+        else 
+            //Caso acabe o arquivo, o heap diminui de tamanho
             vec[0] = vec[--tamHeap];
-        }
+        
         
         if (tamHeap > 0) {
             refazHeap(vec, tamHeap, 0, bench);
@@ -343,13 +343,13 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
         rewind(arqBin);
         Registro buffer[BLOCK_SIZE];
         Registro bufferLimpo[BLOCK_SIZE];
-        size_t lidos;
+        int lidos;
         
         while ((lidos = fread(buffer, sizeof(Registro), BLOCK_SIZE, fitas->vArq[fitaFinal])) > 0) {
-            bench->transfLeit += lidos;
+            bench->transfLeit++;
             int validos = 0;
             
-            for (size_t k = 0; k < lidos; k++) {
+            for (int k = 0; k < lidos; k++) {
                 //Copia apenas os registros validos, pois em uma fita final vai ter varios EOB
                 if (buffer[k].nota != -1.0) {
                     bufferLimpo[validos++] = buffer[k];
@@ -358,7 +358,7 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
             
             if (validos > 0) {
                 fwrite(bufferLimpo, sizeof(Registro), validos, arqBin);
-                bench->transfEsc += validos;
+                bench->transfEsc++;
             }
         }
         fflush(arqBin);
