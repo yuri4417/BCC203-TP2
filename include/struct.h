@@ -10,8 +10,17 @@
 #define IB2FSUB 2 
 #define QS 3      
 #define TAMAREA 20
-#include <stdbool.h>
 #include <stdio.h>
+
+// Macros de compatibilidade entre sistemas para criacao de pastas
+#ifdef _WIN32 // sistemas windows
+    #include <direct.h>
+    #define MKDIR(path) _mkdir(path)
+#else //sistemas unix (Linux, mac)
+    #include <unistd.h>
+    #define MKDIR(path) mkdir(path, 0777)
+#endif
+
 
 #define ARQMETODO "./data/arqMetodo.bin"
 #define ARQRES    "./data/arqResult.txt"
@@ -32,8 +41,6 @@ typedef struct {
     char cidade[51];
     char curso[31];
 } Registro;
-
-#define EOB (Registro){0, -1.0, "", "", ""}
 
 //Struct das Fitas Magneticas
 typedef struct{

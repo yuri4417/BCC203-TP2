@@ -79,7 +79,7 @@ void geraArqMetodo(FILE **pArq, char *filePath, int ord, int printFlag, int tam)
         return;
 
     //Buffer para a leitura dos registros
-    Registro *vec = malloc(sizeof(Registro) * tam);
+    Registro *vec = calloc(tam, sizeof(Registro));
     if (!vec) {
         fclose(*pArq);
         return;
@@ -99,7 +99,7 @@ void geraArqMetodo(FILE **pArq, char *filePath, int ord, int printFlag, int tam)
             fclose(*pArq);
             return;
         }
-        Registro *buffer = malloc(sizeof(Registro) * MAXTAM);
+        Registro *buffer = calloc(MAXTAM, sizeof(Registro));
         if (!buffer) {
             fclose(newFile);
             fclose(pArqTxt);
@@ -169,14 +169,14 @@ FILE* criaArquivos(int situacao, int printFlag, int tam) {
 
 //Função responsável pela criação das fitas
 Fitas *criaFitas(){
-    Fitas *x = malloc(sizeof(Fitas));
+    Fitas *x = calloc(1, sizeof(Fitas));
     char filePath[50];
     struct stat st = {0};
     if (stat("./data/FEntrada", &st) == -1)
-        mkdir("./data/FEntrada", 0777);
+        MKDIR("./data/FEntrada");
 
     if (stat("./data/FSaida", &st) == -1)
-        mkdir("./data/FSaida", 0777);
+        MKDIR("./data/FSaida");
     
     for(int i =0; i<QTDFITAS; i++){
         sprintf(filePath, "./data/FEntrada/Fita_%d.bin", i);
@@ -235,7 +235,7 @@ void converteArquivo(int tam, int printFlag) {
         fclose(pArqRef);
         return;
     }
-    Registro *vec = malloc(sizeof(Registro) * tam);
+    Registro *vec = calloc(tam, sizeof(Registro));
     if (!vec){
         fclose(pArqRef);
         fclose(pDest);

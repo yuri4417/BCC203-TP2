@@ -90,15 +90,15 @@ void mergerec(Registro *v, Registro *aux, int l, int r, Bench *bench) {
 
 //Funcao principal do merge sort
 void mergeSort(Registro *v, int n, Bench *bench) {
-    Registro *aux = (Registro*) malloc(sizeof(Registro) * n);
+    Registro *aux = (Registro*) calloc(n, sizeof(Registro));
     mergerec(v, aux, 0, n - 1, bench);
     free(aux);
 }
 
 //Funcao fundamental da geracao de blocos de acordo com o arquivo base com Merge Sort
 void geraBlocos(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
-    Registro buffer[BLOCK_SIZE];
-    Registro vec[TAMAREA];
+    Registro buffer[BLOCK_SIZE] = {0};
+    Registro vec[TAMAREA] = {0};
 
     int bufferN;
     int qtdRestante = tam;
@@ -133,7 +133,9 @@ void geraBlocos(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
         bench->transfEsc++;
 
         //Escreve -1 para sinalizar o fim do bloco
-        fwrite(&(EOB), sizeof(Registro), 1, fitas->vArq[fitaAtual]);
+        Registro EOB = {0};
+        EOB.nota = -1;
+        fwrite(&EOB, sizeof(Registro), 1, fitas->vArq[fitaAtual]);
         bench->transfEsc++;
 
         fitas->qtdBlocos[fitaAtual]++;
@@ -143,8 +145,8 @@ void geraBlocos(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
 
 //Funcao fundamental da geracao de blocos de acordo com o arquivo base com Selecao por Substituicao
 void geraBlocosSub(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
-    Registro buffer[BLOCK_SIZE];
-    Heap vec[TAMAREA];
+    Registro buffer[BLOCK_SIZE] = {0};
+    Heap vec[TAMAREA] = {0};
 
     int bufferN, qtdRestante = tam, idxBuffer = 0, fitaAtual = 0;
 
@@ -213,8 +215,9 @@ void geraBlocosSub(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
             
             //Se todos estiverem marcados, escreve o EOB e vai para a proxima fita
             if (todosMarcados) {
-
-                fwrite(&(EOB), sizeof(Registro), 1, fitas->vArq[fitaAtual]);
+                Registro EOB = {0};
+                EOB.nota = -1;
+                fwrite(&EOB, sizeof(Registro), 1, fitas->vArq[fitaAtual]);
                 bench->transfEsc++;
 
                 fitas->qtdBlocos[fitaAtual]++;
@@ -228,7 +231,9 @@ void geraBlocosSub(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
         }
     }
     //Escreve o EOB na ultima fita
-    fwrite(&(EOB), sizeof(Registro), 1, fitas->vArq[fitaAtual]);
+    Registro EOB = {0};
+    EOB.nota = -1;
+    fwrite(&EOB, sizeof(Registro), 1, fitas->vArq[fitaAtual]);
     bench->transfEsc++;
     fitas->qtdBlocos[fitaAtual]++;
 }
@@ -236,8 +241,8 @@ void geraBlocosSub(FILE* arqBin, int tam, Fitas *fitas, Bench *bench) {
 //Funcao principal de Intercalacao dos blocos gerados
 void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
     bool parteSaida = true; 
-    Heap h[QTDFITAS];
-    Registro reg;
+    Heap h[QTDFITAS] = {0};
+    Registro reg = {0};
     int baseE = 0;
     int baseS = QTDFITAS;
     int tamHeap;
@@ -313,7 +318,9 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
 
 
             //Escreve o EOB no fim do bloco
-            fwrite(&(EOB), sizeof(Registro), 1, fitas->vArq[idxSaidaAtual]);
+            Registro EOB = {0};
+            EOB.nota = -1;
+            fwrite(&EOB, sizeof(Registro), 1, fitas->vArq[idxSaidaAtual]);
             bench->transfEsc++;
             
             //Vai pra prox fita
@@ -341,8 +348,8 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
     if (fitaFinal != -1) {
         rewind(fitas->vArq[fitaFinal]);
         rewind(arqBin);
-        Registro buffer[BLOCK_SIZE];
-        Registro bufferLimpo[BLOCK_SIZE];
+        Registro buffer[BLOCK_SIZE] = {0};
+        Registro bufferLimpo[BLOCK_SIZE] = {0};
         int lidos;
         
         while ((lidos = fread(buffer, sizeof(Registro), BLOCK_SIZE, fitas->vArq[fitaFinal])) > 0) {
