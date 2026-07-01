@@ -11,6 +11,7 @@
 #define QS 3      
 #define TAMAREA 20
 #include <stdio.h>
+#include <stdbool.h>
 
 // Macros de compatibilidade entre sistemas para criacao de pastas
 #ifdef _WIN32 // sistemas windows

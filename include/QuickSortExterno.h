@@ -1,7 +1,8 @@
 #ifndef QUICKSORTEXTERNO_H
 #define QUICKSORTEXTERNO_H
-#include "struct.h"
 #include <stdio.h>
+#include <stdbool.h>
+#include "struct.h"
 
 void FAVazia(TipoArea *Area); // Inicializa a área como vazia
 int ObterNumCelOcupadas(TipoArea *Area); // Retorna a quantidade de células ocupadas na área

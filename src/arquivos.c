@@ -184,8 +184,7 @@ Fitas *criaFitas(){
         x->qtdBlocos[i] = 0;
         if (!(x->vArq[i])) {
             for(int j = 0; j<i; j++)
-                if (x->vArq[i] != NULL) 
-                    fclose(x->vArq[i]);
+                    fclose(x->vArq[j]);
             printf("Erro ao criar os arquivos de fita de entrada na pos: %d.\n", i);
             free(x);
             return NULL;

@@ -1,7 +1,7 @@
 #ifndef ARQUIVOS_H
 #define ARQUIVOS_H
 #include <stdio.h>
-#include <struct.h>
+#include "struct.h"
 
 
 FILE* criaArquivos(int situacao, int printFlag, int tam); //Funcao responsavel por criar arquivo respectivo ao tipo de ordenacao

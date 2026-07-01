@@ -279,10 +279,10 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
                             h[tamHeap].reg = reg;
                             h[tamHeap].fitaOrigem = i;
                             h[tamHeap++].marcado = false; 
-                        } else {
-                            //Fim do bloco
-                            fitas->qtdBlocos[baseE + i]--; 
                         }
+                        else
+                            //Fim do bloco
+                            fitas->qtdBlocos[baseE + i]--;
                     }
                 }
             }
@@ -308,10 +308,9 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
                         h[0].fitaOrigem = origem;
                         h[0].marcado = false;
                     }
-                } else {
-                    h[0] = h[--tamHeap]; 
                 }
-                    
+                else
+                    h[0] = h[--tamHeap];
                 if (tamHeap > 0)
                     refazHeap(h, tamHeap, 0, bench);
             }
@@ -358,9 +357,8 @@ void intercalarBlocos(FILE* arqBin, Fitas* fitas, Bench *bench) {
             
             for (int k = 0; k < lidos; k++) {
                 //Copia apenas os registros validos, pois em uma fita final vai ter varios EOB
-                if (buffer[k].nota != -1.0) {
+                if (buffer[k].nota != -1.0)
                     bufferLimpo[validos++] = buffer[k];
-                }
             }
             
             if (validos > 0) {
