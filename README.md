@@ -118,16 +118,6 @@ Run the full benchmark suite:
 make bench
 ```
 
-This runs multiple test configurations with scaled sizes and repeated executions to measure performance.
-
-## Benchmarking
-
-Run the full benchmark suite:
-
-```bash
-make bench
-```
-
 This runs multiple test configurations with scaled sizes and repeated executions. Performance metrics include:
 
 - **Read transfers** – Number of disk read operations
